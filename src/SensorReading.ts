@@ -11,26 +11,41 @@ function parseRemotePurpleAirJson(data, averages?: string, conversion?: string) 
   const sensor_stats = sensor_data.stats;
   const conv = conversion ?? 'None';
   const pm25 = getPM25(sensor_data, sensor_stats, averages);
-  const pm25alt = parseFloat(sensor_data['pm2.5_alt']);
   const pm25Cf1 = parseFloat(sensor_data['pm2.5_cf_1']);
   const humidity = parseFloat(sensor_data.humidity) + 4;
   const sensor = sensor_data.sensor_index;
   const voc = sensor_data.voc ? parseFloat(sensor_data.voc) : null;
   const temperature = convertTemperatureToCelcius(parseFloat(sensor_data.temperature));
-  return new SensorReading(sensor, pm25, pm25Cf1, humidity, temperature, voc, conv, pm25alt);
+
+  const pm0_3Araw = parseFloat(sensor_data['p_0_3_um'];
+  const pm0_3Braw = parseFloat(sensor_data['p_0_3_um_b'];
+  const pm0_5Araw = parseFloat(sensor_data['p_0_5_um'];
+  const pm0_5Braw = parseFloat(sensor_data['p_0_5_um_b'];
+  const pm1_0Araw = parseFloat(sensor_data['p_1_0_um'];
+  const pm1_0Braw = parseFloat(sensor_data['p_1_0_um_b'];
+  const pm2_5Araw = parseFloat(sensor_data['p_2_5_um'];
+  const pm2_5Braw = parseFloat(sensor_data['p_2_5_um_b'];
+  return new SensorReading(sensor, pm25, pm25Cf1, humidity, temperature, voc, conv, pm0_3Araw, pm0_3Braw, pm0_5Araw, pm0_5Braw, pm1_0Araw, pm1_0Braw, pm2_5Araw, pm2_5Braw);
 }
 
 function parseLocalPurpleAirJson(data, averages?: string, conversion?: string) {
   const conv = conversion ?? 'None';
   const pm25 = parseFloat(data.pm2_5_atm);
-  const pm25alt = pm25; // local sensors don't have pm2.5_alt (yet?)
-  // TODO: calculate it https://github.com/jmkk/homebridge-purpleair-sensor/issues/58
   const pm25Cf1 = parseFloat(data.pm2_5_cf_1);
   const humidity = parseFloat(data.current_humidity) + 4;
   const sensor = data.Id;
   const temperature = convertTemperatureToCelcius(parseFloat(data.current_temp_f));
   const voc = data.gas_680 ? parseFloat(data.gas_680) : null;
-  return new SensorReading(sensor, pm25, pm25Cf1, humidity, temperature, voc, conv, pm25alt);
+  
+  const pm0_3Araw = parseFloat(data.p_0_3_um);
+  const pm0_3Braw = parseFloat(data.p_0_3_um_b);
+  const pm0_5Araw = parseFloat(data.p_0_5_um);
+  const pm0_5Braw = parseFloat(data.p_0_5_um_b);
+  const pm1_0Araw = parseFloat(data.p_1_0_um);
+  const pm1_0Braw = parseFloat(data.p_1_0_um_b);
+  const pm2_5Araw = parseFloat(data.p_2_5_um);
+  const pm2_5Braw = parseFloat(data.p_2_5_um_b);
+  return new SensorReading(sensor, pm25, pm25Cf1, humidity, temperature, voc, conv, pm0_3Araw, pm0_3Braw, pm0_5Araw, pm0_5Braw, pm1_0Araw, pm1_0Braw, pm2_5Araw, pm2_5Braw);
 }
 
 function getPM25(sensor_data, sensor_stats, averages) {
@@ -60,7 +75,14 @@ export class SensorReading {
    * @param temperature sensor temperature value
    * @param voc sensor Voc value
    * @param conversion conversion ("None", "AQandU", "LRAPA", "EPA", or "WOODSMOKE"). Default to None.
-   * @param pm25alt sensor pm 2.5 value from alt (pm2_5_alt)
+   * @param pm0_3Araw sensor A raw pm 0.3 value used to calculate alternative calibration factors
+   * @param pm0_3Braw sensor B raw pm 0.3 value used to calculate alternative calibration factors
+   * @param pm0_5Araw sensor A raw pm 0.5 value used to calculate alternative calibration factors
+   * @param pm0_5Braw sensor B raw pm 0.5 value used to calculate alternative calibration factors
+   * @param pm1_0Araw sensor A raw pm 1.0 value used to calculate alternative calibration factors
+   * @param pm1_0Braw sensor B raw pm 1.0 value used to calculate alternative calibration factors
+   * @param pm2_5Araw sensor A raw pm 2.5 value used to calculate alternative calibration factors
+   * @param pm2_5Braw sensor B raw pm 2.5 value used to calculate alternative calibration factors
    */
   constructor(
       public readonly sensor: string,
@@ -70,13 +92,20 @@ export class SensorReading {
       public readonly temperature: number,
       public readonly voc: number | null,
       public readonly conversion: string,
-      public readonly pm25alt: number) {
+      public readonly pm0_3Araw: number,
+      public readonly pm0_3Braw: number,
+      public readonly pm0_5Araw:  number,
+      public readonly pm0_5Braw:  number,
+      public readonly pm1_0Araw:  number,
+      public readonly pm1_0Braw:  number,
+      public readonly pm2_5Araw:  number,
+      public readonly pm2_5Braw: number) {
     this.updateTimeMs = Date.now();
   }
 
   public toString = () : string => {
     // eslint-disable-next-line max-len
-    return `(AQI=${this.aqi.toFixed(0)}, PM25=${this.pm25}u/m3, PM25_CF1=${this.pm25Cf1}u/m3, Humidity=${this.humidity}, temperature=${this.temperature}, VOC=${this.voc}, PM25ALT=${this.pm25alt})`;
+    return `(AQI=${this.aqi.toFixed(0)}, PM25=${this.pm25}u/m3, PM25_CF1=${this.pm25Cf1}u/m3, Humidity=${this.humidity}, Temperature=${this.temperature}, VOC=${this.voc}, PM0.3_A Raw=${this.pm0_3Araw}, PM0.3_B Raw=${this.pm0_3Braw}, PM0.5 A Raw=${this.pm0_3Araw}, PM0.5_B Raw=${this.pm0_3Braw}, PM1.0_A Raw=${this.pm1_0Araw}, PM1.0_B Raw=${this.pm1_0Braw}, PM2.5_A Raw=${this.pm2_5Araw}, PM2.5_B Raw=${this.pm2_5Braw})`;
   };
 
   get aqi(): number {
@@ -95,6 +124,9 @@ export class SensorReading {
       }
       case 'ALT-CF3': {
         return SensorReading.pmToAQI(this.pm25alt);
+      }
+      case 'ALT-CF3.4': {
+        return SensorReading.pmToAQI( // *todo needs finishing
       }
       default: {
         return SensorReading.pmToAQI(this.pm25);
@@ -122,6 +154,11 @@ export class SensorReading {
       return 5; // Return POOR (Homekit only goes to cat 5, so combined the last two AQI cats of Very Unhealty and Hazardous.
     }
     return 0;
+  }
+
+  static calcAltPM(a03: number, b03: number, a05: number, b05: number, a10: number, b10: number, a25: number, b25: number): number {
+  
+  //todo finish
   }
 
   static pmToAQandU(pm: number): number {
